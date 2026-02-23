@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>VCF 9 Fleet Planning Sizer (ESA) | vmtechie.blog</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;800&display=swap');
+
+    body { font-family: 'Inter', sans-serif; background:#0f172a; color:#f1f5f9; }
+    .mono { font-family:'JetBrains Mono', monospace; }
+
+    .inp, .sel{
+      background:#ffffff;
+      color:#000;
+      border:1px solid #334155;
+      border-radius:10px;
+      padding:6px 10px;
+      font-weight:800;
+      font-size:12px;
+      width:100%;
+      height:34px;
+      outline:none;
+    }
+    .inp:focus, .sel:focus { border-color:#60a5fa; box-shadow:0 0 0 3px rgba(59,130,246,.25); }
+
+    .lbl { font-size:10px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; color:#94a3b8; margin-bottom:6px; }
+    .tiny { font-size:11px; color:#94a3b8; line-height:1.35; }
+
+    .card{
+      background:#1e293b;
+      border:1px solid #334155;
+      border-radius:26px;
+      box-shadow:0 22px 55px rgba(0,0,0,.35);
+    }
+
+    .chip{
+      font-size:10px; font-weight:900; letter-spacing:.14em; text-transform:uppercase;
+      padding:7px 12px; border-radius:999px;
+      border:1px solid rgba(148,163,184,.35);
+      background:rgba(2,6,23,.35);
+      color:#e2e8f0;
+    }
+
+    .btn{
+      background:#2563eb;
+      border:1px solid rgba(255,255,255,.12);
+      color:#fff;
+      font-weight:900;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      font-size:11px;
+      padding:10px 14px;
+      border-radius:999px;
+      transition:.15s;
+    }
+    .btn:hover{ background:#3b82f6; transform:translateY(-1px); }
+    .btn:active{ transform:translateY(0px) scale(.98); }
+
+    .btn2{
+      background:rgba(148,163,184,.08);
+      border:1px solid rgba(148,163,184,.25);
+      color:#e2e8f0;
+      font-weight:900;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      font-size:11px;
+      padding:10px 14px;
+      border-radius:999px;
+      transition:.15s;
+    }
+    .btn2:hover{ background:rgba(148,163,184,.14); }
+
+    table { width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; }
+    th{
+      position:sticky; top:0;
+      z-index:10;
+      background:rgba(30,41,59,.95);
+      backdrop-filter: blur(6px);
+      border-bottom:1px solid rgba(51,65,85,.8);
+      border-right:1px solid rgba(51,65,85,.6);
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#94a3b8;
+      padding:12px 10px;
+    }
+    td{
+      border-bottom:1px solid rgba(51,65,85,.45);
+      border-right:1px solid rgba(51,65,85,.35);
+      padding:10px;
+      font-size:12px;
+      color:#cbd5e1;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    th:last-child, td:last-child { border-right:none; }
+    .row-off { opacity:.35; filter:grayscale(1); font-style:italic; }
+
+    .bigNum { font-size:40px; font-weight:900; letter-spacing:-.06em; line-height:1; }
+    .bigNum2 { font-size:32px; font-weight:900; letter-spacing:-.05em; line-height:1; }
+
+    .hostNode{
+      width:40px;height:44px;
+      border-radius:12px;
+      border:1px solid rgba(51,65,85,.9);
+      background:rgba(2,6,23,.35);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      box-shadow:0 10px 20px rgba(0,0,0,.25);
+    }
+
+    .miniHdr{
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:#e2e8f0;
+    }
+
+    .analysisTable{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      table-layout:fixed;
+      overflow:hidden;
+      border-radius:18px;
+      border:1px solid rgba(51,65,85,.8);
+      background:rgba(2,6,23,.25);
+    }
+    .analysisTable th{
+      position:static;
+      background:rgba(15,23,42,.65);
+      border-right:1px solid rgba(51,65,85,.6);
+      border-bottom:1px solid rgba(51,65,85,.6);
+      padding:10px 12px;
+      font-size:10px;
+    }
+    .analysisTable td{
+      border-right:1px solid rgba(51,65,85,.35);
+      border-bottom:1px solid rgba(51,65,85,.35);
+      padding:10px 12px;
+      vertical-align:top;
+      white-space:normal;
+    }
+    .analysisTable td:last-child, .analysisTable th:last-child{ border-right:none; }
+
+    /* Bigger variant for WLD Summary readability */
+    .analysisTableBig th{
+      font-size:11px !important;
+      padding:12px 12px !important;
+    }
+    .analysisTableBig td{
+      font-size:14px !important;
+      padding:14px 12px !important;
+    }
+
+    .lim-cpu{ color:#93c5fd; font-weight:900; }
+    .lim-mem{ color:#fde68a; font-weight:900; }
+    .lim-stg{ color:#fda4af; font-weight:900; }
+
+    .badge{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:6px 10px; border-radius:999px;
+      font-size:10px; font-weight:900;
+      letter-spacing:.14em; text-transform:uppercase;
+      border:1px solid rgba(148,163,184,.25);
+      background:rgba(2,6,23,.25);
+      color:#e2e8f0;
+      white-space:nowrap;
+    }
+    .b-healthy{ border-color:rgba(52,211,153,.35); background:rgba(16,185,129,.12); color:#a7f3d0; }
+    .b-tight{ border-color:rgba(251,191,36,.4); background:rgba(251,191,36,.12); color:#fde68a; }
+    .b-oversized{ border-color:rgba(147,197,253,.35); background:rgba(59,130,246,.12); color:#bfdbfe; }
+
+    .barWrap{
+      height:10px;
+      border-radius:999px;
+      border:1px solid rgba(51,65,85,.8);
+      background:rgba(2,6,23,.35);
+      overflow:hidden;
+    }
+    .barFill{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg, rgba(59,130,246,.95), rgba(16,185,129,.95));
+      border-radius:999px;
+      transition: width .25s ease;
+    }
+    .barFill.tight{ background:linear-gradient(90deg, rgba(251,191,36,.95), rgba(245,158,11,.95)); }
+    .barFill.hot{ background:linear-gradient(90deg, rgba(244,63,94,.95), rgba(251,113,133,.95)); }
+
+    /* Tooltip */
+    .tip{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:18px; height:18px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.35);
+      background:rgba(2,6,23,.35);
+      color:#e2e8f0;
+      font-size:11px;
+      font-weight:900;
+      line-height:1;
+      cursor:help;
+      margin-left:6px;
+    }
+
+    @media print{
+      .no-print{ display:none !important; }
+      body{ background:#ffffff !important; color:#000 !important; }
+      .card{ box-shadow:none !important; border:1px solid #cbd5e1 !important; }
+      th{ position:static !important; background:#f8fafc !important; color:#111827 !important; }
+      td{ color:#111827 !important; }
+      .analysisTable{ border:1px solid #cbd5e1 !important; background:#ffffff !important; }
+      .analysisTable th{ background:#f8fafc !important; color:#111827 !important; }
+      .chip, .badge, .tip { border:1px solid #cbd5e1 !important; background:#f8fafc !important; color:#111827 !important; }
+      .barWrap{ border:1px solid #cbd5e1 !important; background:#f8fafc !important; }
+      .barFill{ background:#111827 !important; }
+    }
+  </style>
+</head>
+
+<body class="p-4 md:p-8">
+<div class="max-w-[1900px] mx-auto space-y-6">
+
+  <!-- Header -->
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-5 text-center">
+    <div class="card p-6 bg-gradient-to-br from-blue-700 to-indigo-950 border-b-8 border-blue-900">
+      <div class="text-[11px] tracking-widest uppercase text-blue-100/80 font-black">vmtechie.blog</div>
+      <h1 class="mt-2 text-2xl md:text-3xl italic tracking-tight uppercase leading-none font-black">
+        VCF 9 <span class="text-blue-300">Fleet Planning Sizer</span>
+      </h1>
+      <div class="mt-2 text-[11px] text-blue-100/80 tracking-wide">
+        ESA-only sizing + licensing visibility (independent planner)
+      </div>
+    </div>
+
+    <div class="card p-6 flex flex-col items-center justify-center">
+      <div class="lbl">Total Fleet Hosts</div>
+      <div id="sum-hosts" class="bigNum text-white">--</div>
+    </div>
+
+    <div class="card p-6 flex flex-col items-center justify-center">
+      <div class="lbl">Core Licenses (Total)</div>
+      <div id="sum-cores" class="bigNum text-sky-200">--</div>
+    </div>
+
+    <div class="card p-6 flex flex-col items-center justify-center">
+      <div class="lbl">vSAN Raw (TiB) Total</div>
+      <div id="sum-storage" class="bigNum text-emerald-200">--</div>
+    </div>
+  </div>
+
+  <!-- Fleet License Summary -->
+  <div class="card p-5">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <div class="text-[13px] font-black uppercase tracking-widest italic text-slate-100">Fleet License Summary</div>
+        <div class="text-[11px] text-slate-400 mt-1">Entitlement modeled as <span class="text-slate-200 font-black">1 TiB per licensed core</span> (planner view) • vmtechie.blog</div>
+      </div>
+      <div class="no-print flex gap-2">
+        <button class="btn2" onclick="window.print()">Export PDF</button>
+      </div>
+    </div>
+
+    <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="p-4 rounded-2xl border border-slate-700 bg-slate-950/30">
+        <div class="lbl">Mgmt Core Licenses</div>
+        <div id="lic-mgmt" class="bigNum2 text-sky-200">--</div>
+      </div>
+      <div class="p-4 rounded-2xl border border-slate-700 bg-slate-950/30">
+        <div class="lbl">WLD Core Licenses</div>
+        <div id="lic-wld" class="bigNum2 text-sky-200">--</div>
+      </div>
+      <div class="p-4 rounded-2xl border border-slate-700 bg-slate-950/30">
+        <div class="lbl">Entitlement (TiB)</div>
+        <div id="lic-ent" class="bigNum2 text-emerald-200">--</div>
+      </div>
+      <div class="p-4 rounded-2xl border border-red-500/40 bg-red-500/10">
+        <div class="lbl text-red-200">Add-on Required (TiB)</div>
+        <div id="lic-addon" class="bigNum2 text-red-300">--</div>
+      </div>
+    </div>
+
+    <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="p-3 rounded-2xl border border-slate-700 bg-slate-950/20 mono text-[11px] leading-relaxed">
+        <div class="flex justify-between"><span class="text-slate-400">Required Raw (TiB)</span><span id="lic-raw" class="text-emerald-200 font-black">--</span></div>
+        <div class="flex justify-between mt-2"><span class="text-slate-400">Brand</span><span class="text-slate-200 font-black">vmtechie.blog</span></div>
+      </div>
+      <div class="p-3 rounded-2xl border border-slate-700 bg-slate-950/20 text-[11px] text-slate-400 leading-relaxed">
+        Notes: Planning aid only. Validate final design with official guidance, HCL, and field review.
+      </div>
+    </div>
+  </div>
+
+  <!-- MANAGEMENT: Host Profile + Planning Assumptions -->
+  <div class="card p-5 border border-orange-500/30 bg-orange-500/5">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <div class="text-[12px] font-black uppercase tracking-widest italic text-orange-300">1. Management Host Profile</div>
+        <div class="text-[11px] text-slate-400 mt-1">Hardware vs policy split • <span class="text-slate-200 font-black">vmtechie.blog</span></div>
+      </div>
+      <div id="m-visualizer" class="flex gap-1"></div>
+    </div>
+
+    <!-- 1A Hardware -->
+    <div class="mt-4">
+      <div class="text-[11px] font-black uppercase tracking-widest text-orange-200/90">1A. Hardware Profile</div>
+      <div class="mt-3 grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div><div class="lbl">CPUs / Host</div><input type="number" id="m-cpuQty" value="2" min="1" class="inp" oninput="recalculate()"></div>
+        <div><div class="lbl">Cores / CPU</div><input type="number" id="m-coresPerCpu" value="16" min="1" class="inp" oninput="recalculate()"></div>
+        <div><div class="lbl">RAM / Host (GB)</div><input type="number" id="m-ram" value="1024" min="64" class="inp" oninput="recalculate()"></div>
+        <div><div class="lbl">NVMe Qty</div><input type="number" id="m-nvme-qty" value="6" min="0" class="inp" oninput="recalculate()"></div>
+        <div><div class="lbl">NVMe Size (TB)</div><input type="number" id="m-nvme-size" value="7.68" step="0.01" min="0" class="inp" oninput="recalculate()"></div>
+        <div><div class="lbl">Min Hosts</div>
+          <select id="m-min-hosts" class="sel" onchange="recalculate()">
+            <option value="3">3</option><option value="4" selected>4 (VCF Rec.)</option><option value="5">5</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5 border-t border-orange-900/30"></div>
+
+    <!-- 1B Policy -->
+    <div class="mt-5">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="text-[11px] font-black uppercase tracking-widest text-orange-200/90">1B. Policy + Planning</div>
+        <div class="tiny">DRR = Dedup × Compression (toggleable) • Failure Domain = 0 / N+1 / N+2</div>
+      </div>
+
+      <div class="mt-3 grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div><div class="lbl text-sky-300">CPU OVERSUB</div>
+          <select id="m-cpu-sub" class="sel" onchange="recalculate()">
+            <option value="1">1:1</option><option value="2" selected>2:1</option><option value="4">4:1</option><option value="8">8:1</option>
+          </select>
+        </div>
+        <div><div class="lbl text-sky-300">MEM OVERSUB</div>
+          <select id="m-ram-sub" class="sel" onchange="recalculate()">
+            <option value="1" selected>1:1</option><option value="2">2:1</option><option value="4">4:1</option><option value="8">8:1</option>
+          </select>
+        </div>
+        <div><div class="lbl">Host & Ops Reserve %</div>
+          <select id="m-reserve" class="sel" onchange="recalculate()">
+            <option value="15">15%</option><option value="20">20%</option><option value="25">25%</option><option value="30" selected>30%</option>
+          </select>
+          <div class="tiny mt-1">Compute + memory only.</div>
+        </div>
+        <div><div class="lbl text-emerald-300">FTT</div>
+          <select id="m-ftt" class="sel" onchange="recalculate()">
+            <option value="1" selected>FTT=1</option><option value="2">FTT=2</option>
+          </select>
+        </div>
+        <div><div class="lbl text-emerald-300">RAID</div>
+          <select id="m-raid" class="sel" onchange="recalculate()">
+            <option value="mirror">RAID-1</option><option value="raid5" selected>RAID-5</option><option value="raid6">RAID-6</option>
+          </select>
+        </div>
+        <div><div class="lbl">vSAN Free Space %</div>
+          <input type="number" id="m-free" value="30" min="0" max="50" class="inp" oninput="recalculate()">
+        </div>
+      </div>
+
+      <div class="mt-4 grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div><div class="lbl">Dedup</div><input type="number" id="m-dedupe" value="1.2" step="0.1" min="1" class="inp" oninput="recalculate()"></div>
+        <div><div class="lbl">Compression</div><input type="number" id="m-comp" value="1.2" step="0.1" min="1" class="inp" oninput="recalculate()"></div>
+
+        <div class="md:col-span-2">
+          <div class="lbl">Apply DRR</div>
+          <label class="flex items-center gap-3 p-2 rounded-2xl border border-slate-700 bg-slate-950/25">
+            <input type="checkbox" id="m-applyDRR" class="accent-emerald-500 scale-110" checked onchange="recalculate()">
+            <span class="text-[12px] text-slate-200 font-black">ON</span>
+            <span class="tiny">DRR reduces capacity requirement (planner).</span>
+          </label>
+        </div>
+
+        <div><div class="lbl">VM Swap used %</div>
+          <input type="number" id="m-swapPct" value="100" step="5" min="0" max="200" class="inp" oninput="recalculate()">
+          <div class="tiny mt-1">Swap = (Total RAM) × %</div>
+        </div>
+
+        <div>
+          <div class="lbl">Failure Domain</div>
+          <select id="m-fail" class="sel" onchange="recalculate()">
+            <option value="0">0</option>
+            <option value="1" selected>N+1</option>
+            <option value="2">N+2</option>
+          </select>
+          <div class="tiny mt-1">Used as “host failures”.</div>
+        </div>
+      </div>
+
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div class="md:col-span-6">
+          <div class="p-3 rounded-2xl border border-slate-700 bg-slate-950/25">
+            <div class="text-[11px] text-slate-300">
+              <span class="font-black text-slate-100">vmtechie.blog:</span> ESA-only planner • DRR = Dedup × Compression. Protected = (VM Capacity + Swap) × PF.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Management VM Stack -->
+  <div class="card p-0 overflow-hidden">
+    <div class="p-5 border-b border-slate-700 bg-slate-800/40 flex items-center justify-between">
+      <div>
+        <div class="text-[15px] font-black uppercase tracking-tight italic text-slate-200">2. Management VM Stack</div>
+        <div class="text-[11px] text-slate-400 mt-1">Full stack + Custom 1/2 included.</div>
+      </div>
+      <div class="chip">vmtechie.blog</div>
+    </div>
+
+    <div class="overflow-x-auto max-h-[520px]">
+      <table>
+        <thead>
+          <tr>
+            <th class="w-14 text-center">Inc</th>
+            <th class="w-[460px] text-left">Component Name</th>
+            <th class="w-24 text-center">Nodes</th>
+            <th class="w-24 text-center">Size</th>
+            <th class="w-20 text-center">vCPU</th>
+            <th class="w-24 text-center">RAM (GB)</th>
+            <th class="w-28 text-center">Disk (GB)</th>
+          </tr>
+        </thead>
+        <tbody id="inventory-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Management Analysis + ESA (ONE COMPACT TABLE) -->
+  <div class="card p-5">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <div class="text-[12px] font-black uppercase tracking-widest italic text-orange-200">3. Management Analysis + ESA Storage Breakdown</div>
+        <div class="text-[11px] text-slate-400 mt-1">Compact view to avoid page waste • <span class="text-slate-200 font-black">vmtechie.blog</span></div>
+      </div>
+      <div class="chip">vmtechie.blog</div>
+    </div>
+
+    <div class="mt-4 overflow-x-auto">
+      <table class="analysisTable">
+        <thead>
+          <tr>
+            <th class="text-left w-1/2">Host Sizing (Compute + Memory + Storage)</th>
+            <th class="text-left w-1/2">ESA Storage Breakdown (Protected = Interim × PF)</th>
+          </tr>
+        </thead>
+        <tbody class="mono">
+          <tr>
+            <td>
+              <div class="flex items-center justify-between">
+                <div class="miniHdr">Result</div>
+                <div class="text-[11px] text-slate-400">Limiter: <span id="m-limiter" class="lim-mem">--</span></div>
+              </div>
+
+              <div class="mt-3 grid grid-cols-2 gap-3 text-[12px]">
+                <div class="p-3 rounded-2xl border border-slate-700 bg-slate-950/20">
+                  <div class="lbl">Compute</div>
+                  <div class="text-slate-200 font-black">Demand: <span id="m-dem-v" class="text-white">--</span> vCPU</div>
+                  <div class="text-slate-400 text-[11px]">Host Cap: <span id="m-cap-v">--</span></div>
+                  <div class="text-slate-400 text-[11px]">Hosts: <span id="m-hosts-cpu">--</span></div>
+                </div>
+                <div class="p-3 rounded-2xl border border-slate-700 bg-slate-950/20">
+                  <div class="lbl">Memory</div>
+                  <div class="text-slate-200 font-black">Demand: <span id="m-dem-r" class="text-white">--</span> GB</div>
+                  <div class="text-slate-400 text-[11px]">Host Cap: <span id="m-cap-r">--</span></div>
+                  <div class="text-slate-400 text-[11px]">Hosts: <span id="m-hosts-ram">--</span></div>
+                </div>
+                <div class="p-3 rounded-2xl border border-slate-700 bg-slate-950/20 col-span-2">
+                  <div class="flex justify-between">
+                    <div>
+                      <div class="lbl">Final</div>
+                      <div class="text-slate-200 font-black text-[13px]">Mgmt Hosts: <span id="m-hosts" class="text-orange-200">--</span></div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-slate-400 text-[11px]">Storage Hosts: <span id="m-hosts-stg" class="text-slate-100 font-black">--</span></div>
+                      <div class="text-slate-400 text-[11px]">PF: <span id="m-esa-pf" class="text-slate-100 font-black">--</span></div>
+                    </div>
+                  </div>
+                  <div class="mt-2 grid grid-cols-2 gap-3">
+                    <div class="text-slate-400 text-[11px]">Mgmt Core Licenses: <span id="m-coresOut" class="text-sky-200 font-black">--</span></div>
+                    <div class="text-slate-400 text-[11px] text-right">Mgmt Raw: <span id="m-rawOut" class="text-emerald-200 font-black">--</span> TiB</div>
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <div class="p-3 rounded-2xl border border-slate-700 bg-slate-950/15 text-[12px]">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">VM Capacity <span class="text-slate-500">(VM disks + infra disks)</span></span>
+                  <span id="m-esa-vmcap" class="text-sky-200 font-black">--</span>
+                </div>
+                <div class="flex justify-between mt-2">
+                  <span class="text-slate-400">Swap <span class="text-slate-500">(tenant+infra RAM)</span></span>
+                  <span id="m-esa-swap" class="text-slate-100 font-black">--</span>
+                </div>
+                <div class="flex justify-between mt-2">
+                  <span class="text-slate-400">Interim Total</span>
+                  <span id="m-esa-interim" class="text-slate-100 font-black">--</span>
+                </div>
+                <div class="flex justify-between mt-2">
+                  <span class="text-slate-400">Protected <span class="text-slate-500">(× PF)</span></span>
+                  <span id="m-esa-prot" class="text-emerald-200 font-black">--</span>
+                </div>
+                <div class="flex justify-between mt-2">
+                  <span class="text-slate-400">+ Free Space Reserve</span>
+                  <span id="m-esa-free" class="text-slate-100 font-black">--</span>
+                </div>
+                <div class="flex justify-between mt-2">
+                  <span class="text-slate-400">+ Growth</span>
+                  <span id="m-esa-growth" class="text-slate-100 font-black">--</span>
+                </div>
+                <div class="flex justify-between mt-2">
+                  <span class="text-slate-400">Effective Hosts <span class="text-slate-500">(N - failures)</span></span>
+                  <span id="m-esa-effhosts" class="text-slate-100 font-black">--</span>
+                </div>
+                <div class="flex justify-between mt-2">
+                  <span class="text-slate-400">Per Host Required</span>
+                  <span id="m-esa-perhost" class="text-emerald-200 font-black">--</span>
+                </div>
+              </div>
+
+              <div class="tiny mt-3">
+                DRR reduces required capacity (planner efficiency). Treat DRR &gt; 2.0 as optimistic unless validated.
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Workload Domains -->
+  <div class="card p-5">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <div class="text-[16px] font-black uppercase tracking-tight italic text-blue-300">4. Workload Domains</div>
+        <div class="text-[11px] text-slate-400 mt-1">Per-WLD dashboard: limiter colors + utilization bar + health badge + host tiles • <span class="text-slate-200 font-black">vmtechie.blog</span></div>
+      </div>
+      <div class="no-print flex gap-2">
+        <button class="btn" onclick="addWLD()">+ Add WLD</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="wld-container" class="space-y-6"></div>
+
+  <!-- Disclaimer (BOLD) -->
+  <div class="card p-6 border border-red-500/40 bg-red-500/10">
+    <div class="text-[11px] font-black uppercase tracking-widest text-red-200 mb-2">Disclaimer</div>
+    <div class="text-[12px] text-red-100/95 leading-relaxed font-black">
+      This calculator is an independent planning aid. It is not an official Broadcom/VMware tool and is not endorsed or supported by my employer.
+      Validate final designs against official documentation, HCL guidance and field engineering recommendations.
+      <span class="font-black">vmtechie.blog</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // =========================
+  //  Helpers / Globals
+  // =========================
+  let wldCount = 0;
+  const TB_TO_TIB = 0.909495;
+
+  function clampNum(x, def=0){
+    const n = Number(x);
+    return Number.isFinite(n) ? n : def;
+  }
+
+  function hostTile(label, tone) {
+    const c = tone === 'mgmt' ? 'text-orange-200' : 'text-sky-200';
+    return `
+      <div class="hostNode">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="${c}">
+          <rect x="4" y="5" width="16" height="6" rx="2" stroke="currentColor" stroke-width="1.6"/>
+          <rect x="4" y="13" width="16" height="6" rx="2" stroke="currentColor" stroke-width="1.6"/>
+          <circle cx="8" cy="8" r="1" fill="currentColor"/>
+          <circle cx="8" cy="16" r="1" fill="currentColor"/>
+        </svg>
+        <div class="text-[9px] font-black text-slate-100 -mt-1">${label}</div>
+      </div>
+    `;
+  }
+
+  // =========================
+  //  ESA Protection + Storage
+  // =========================
+  function esaProtectionFactor({ mode, ftt }) {
+    if (mode === "MIRROR") return 1 + ftt; // FTT1=>2, FTT2=>3
+    if (mode === "RAID5" && ftt === 1) return 1.5;  // 2+1
+    if (mode === "RAID5" && ftt === 2) return 1.75; // 4+2
+    if (mode === "RAID6" && ftt === 2) return 1.5;  // 2+2
+    throw new Error("Unsupported mode/FTT combo");
+  }
+
+  function esaStorageTotals({
+    vmCapacityGB,
+    swapGB,
+    protectionFactor,
+    freeSpacePct,
+    growthPct
+  }) {
+    const interimGB = vmCapacityGB + swapGB;
+    const protectedGB = interimGB * protectionFactor;
+    const withFreeGB = protectedGB * (1 + freeSpacePct);
+    const withGrowthGB = withFreeGB * (1 + growthPct);
+    return { interimGB, protectedGB, withFreeGB, withGrowthGB };
+  }
+
+  function esaPerHostFromTotals({ withGrowthGB, clusterHostsN, hostFailures }) {
+    const effectiveHosts = clusterHostsN - hostFailures;
+    if (effectiveHosts <= 0) throw new Error("Effective hosts must be > 0");
+    return { effectiveHosts, perHostGB: withGrowthGB / effectiveHosts };
+  }
+
+  // =========================
+  //  Mgmt VM sizing map (incl. NSX Edge sizing)
+  // =========================
+  const tshirtMap = {
+    vc_m: { s: [4, 21, 694], m: [8, 30, 908], l: [16, 39, 1358], xl: [24, 58, 2283] },
+    nsx_m: { m: [6, 24, 300], l: [12, 48, 300], xl: [24, 96, 400] },
+    nsx_e: { s: [2, 4, 200], m: [4, 8, 200], l: [8, 32, 200], xl: [16, 64, 200] },
+    nsx_gm: { s: [4, 16, 300], m: [6, 24, 300], l: [12, 48, 300], xl: [24, 96, 400] },
+    avi:   { s: [8, 24, 128], m: [16, 32, 256], l: [24, 48, 512] },
+    vc_w:  { s: [4, 21, 694], m: [8, 30, 908], l: [16, 39, 1358], xl: [24, 58, 2283] },
+    nsx_w: { m: [4, 24, 300], l: [12, 48, 300], xl: [24, 96, 400] },
+    vcfops: { s: [4, 16, 274], m: [8, 32, 274], l: [16, 48, 274], xl: [24, 128, 274] },
+    vcfcollector: { s: [2, 8, 144], m: [4, 32, 144] },
+    vcflogs: { s: [12, 24, 1590], m: [24, 48, 1590], l: [48, 96, 1590] },
+    vcfnet: { l: [12, 24, 1590], xl: [24, 48, 1590], xxl: [48, 96, 1590] },
+    vcfnetcoll: { m: [4, 12, 200], l: [8, 16, 200], xl: [8, 24, 200], xxl: [16, 48, 300] },
+    identity: { emb: [0, 0, 0], ha: [32, 64, 400] },
+    custom: { s:[2,4,100], m:[4,8,200], l:[8,16,400], xl:[16,32,800] }
+  };
+
+  const components = [
+    { id: 'sddc', name: "SDDC Manager", type: 'fixed', v: 4, r: 16, d: 930, n: 1, active: true },
+    { id: 'vc_m', name: "Mgmt Domain vCenter", type: 'vc_m', size: 's', n: 2, active: true },
+    { id: 'nsx_m', name: "Mgmt Domain NSX Manager", type: 'nsx_m', size: 'm', n: 3, active: true },
+    { id: 'nsx_e', name: "Mgmt Domain NSX Edges", type: 'nsx_e', size: 's', n: 2, active: true },
+    { id: 'nsx_gm', name: "NSX GM", type: 'nsx_gm', size: 's', n: 3, active: false },
+    { id: 'avi_m', name: "AVI Controller", type: 'avi', size: 's', n: 3, active: true },
+    { id: 'vc_w', name: "WLD Domain vCenter", type: 'vc_w', size: 'm', n: 1, active: true },
+    { id: 'nsx_w', name: "WLD Domain NSX Manager", type: 'nsx_w', size: 'm', n: 3, active: true },
+    { id: 'ops_fm', name: "VCF Ops Fleet Manager", type: 'fixed', v: 4, r: 12, d: 194, n: 1, active: true },
+    { id: 'vcf_ops', name: "VCF Operations", type: 'vcfops', size: 's', n: 1, active: true },
+    { id: 'vcf_coll', name: "VCF Operations Collector", type: 'vcfcollector', size: 's', n: 3, active: true },
+    { id: 'vcf_auto', name: "VCF Automation", type: 'fixed', v: 24, r: 96, d: 700, n: 1, active: true },
+    { id: 'vcf_logs', name: "VCF Operations for Logs", type: 'vcflogs', size: 's', n: 3, active: true },
+    { id: 'vcf_net', name: "VCF Operations for Network", type: 'vcfnet', size: 'l', n: 3, active: false },
+    { id: 'vcf_net_coll', name: "VCF Net Collector", type: 'vcfnetcoll', size: 'm', n: 3, active: false },
+    { id: 'id_broker', name: "Identity Broker", type: 'identity', size: 'ha', n: 2, active: false },
+    { id: 'custom1', name: "Custom 1", type: 'custom', size: 's', n: 1, active: true },
+    { id: 'custom2', name: "Custom 2", type: 'custom', size: 's', n: 1, active: true }
+  ];
+
+  // WLD infra maps:
+  // - Supervisor uses VKS sizing (Tiny/Small/Medium/Large) per your spec
+  // - Edge MUST match management nsx_e sizing including XL
+  const wldVmMap = {
+    vks: {
+      tiny:  [2,  8,  32],
+      small: [4, 16,  32],
+      medium:[8, 16,  32],
+      large: [16,32,  32]
+    },
+    edgeFromMgmt: {
+      s: tshirtMap.nsx_e.s,
+      m: tshirtMap.nsx_e.m,
+      l: tshirtMap.nsx_e.l,
+      xl: tshirtMap.nsx_e.xl
+    },
+    custom: { s: [2, 4, 100], m: [4, 8, 200], l: [8, 16, 400] }
+  };
+
+  function sizeLabel(s){
+    const map = { s:'S', m:'M', l:'L', xl:'XL', xxl:'XXL', ha:'HA', emb:'Emb', tiny:'Tiny', small:'Small', medium:'Medium', large:'Large' };
+    return map[s] || String(s).toUpperCase();
+  }
+
+  function renderInventory(){
+    const tbody = document.getElementById('inventory-body');
+    tbody.innerHTML = '';
+
+    components.forEach(c => {
+      const specs = c.type !== 'fixed'
+        ? (tshirtMap[c.type]?.[c.size] || [0,0,0])
+        : [c.v, c.r, c.d];
+
+      tbody.innerHTML += `
+        <tr id="row-${c.id}" class="${!c.active ? 'row-off' : ''}">
+          <td class="text-center">
+            <input type="checkbox" ${c.active ? 'checked' : ''} onchange="toggleVm('${c.id}')" class="accent-orange-500 scale-110">
+          </td>
+          <td class="text-slate-100 font-black">${c.name}</td>
+          <td class="text-center">
+            <input type="number" id="node-val-${c.id}" value="${c.n}"
+              class="inp !w-20 !mx-auto !text-center"
+              oninput="updateNodes('${c.id}', this.value)">
+          </td>
+          <td class="text-center">
+            ${
+              c.type !== 'fixed'
+              ? `<select class="sel !w-20 !mx-auto" onchange="updateSize('${c.id}', this.value)">
+                  ${Object.keys(tshirtMap[c.type] || {}).map(s => `<option value="${s}" ${c.size===s?'selected':''}>${sizeLabel(s)}</option>`).join('')}
+                 </select>`
+              : `<span class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Fixed</span>`
+            }
+          </td>
+          <td class="text-center mono font-black text-slate-100">${specs[0]}</td>
+          <td class="text-center mono font-black text-slate-100">${specs[1]}</td>
+          <td class="text-center mono font-black text-sky-200">${specs[2]}</td>
+        </tr>
+      `;
+    });
+
+    recalculate();
+  }
+
+  function toggleVm(id){
+    const obj = components.find(x => x.id === id);
+    obj.active = !obj.active;
+    renderInventory();
+  }
+  function updateNodes(id, val){
+    components.find(x => x.id === id).n = parseInt(val) || 0;
+    recalculate();
+  }
+  function updateSize(id, val){
+    components.find(x => x.id === id).size = val;
+    renderInventory();
+  }
+
+  function mgmtTotals(){
+    let v=0,r=0,d=0;
+    components.forEach(c => {
+      if(!c.active) return;
+      const specs = c.type !== 'fixed'
+        ? (tshirtMap[c.type]?.[c.size] || [0,0,0])
+        : [c.v,c.r,c.d];
+      v += specs[0] * c.n;
+      r += specs[1] * c.n;
+      d += specs[2] * c.n;
+    });
+    return { vcpu:v, ramGB:r, diskGB:d };
+  }
+
+  // =========================
+  //  WLD UI
+  // =========================
+  function toggleWldCollapse(id){
+    const body = document.getElementById(`wld-body-${id}`);
+    const label = document.getElementById(`wld-toggle-label-${id}`);
+    const chev = document.getElementById(`wld-chev-${id}`);
+    if(!body) return;
+
+    const hidden = body.classList.toggle('hidden');
+    if(label) label.innerText = hidden ? 'Expand' : 'Collapse';
+    if(chev){
+      chev.innerHTML = hidden
+        ? `<path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`
+        : `<path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }
+  }
+
+  function addWLD(){
+    wldCount++;
+    const id = wldCount;
+
+    const container = document.getElementById('wld-container');
+    const div = document.createElement('div');
+    div.className = 'card p-5 border-t-8 border-blue-500 bg-slate-900 wld-card';
+    div.id = `wld-${id}`;
+
+    div.innerHTML = `
+      <div class="flex items-start justify-between gap-3 flex-wrap border-b border-slate-700 pb-3">
+        <div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="text-[16px] md:text-[18px] font-black uppercase tracking-tight italic text-white">WLD #${id}</div>
+            <div class="chip">vmtechie.blog</div>
+            <span id="w-health-${id}" class="badge b-healthy">Healthy</span>
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1">
+            Utilization (worst of CPU/Mem/Storage):
+            <span id="w-util-pct-${id}" class="text-slate-100 font-black mono">--%</span>
+          </div>
+          <div class="mt-2 barWrap max-w-[520px]">
+            <div id="w-util-bar-${id}" class="barFill"></div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 flex-wrap">
+          <div id="wld-viz-${id}" class="flex gap-1"></div>
+
+          <div class="no-print flex items-center gap-2">
+            <button class="btn2" onclick="toggleWldCollapse(${id})">
+              <span class="inline-flex items-center gap-2">
+                <svg id="wld-chev-${id}" width="16" height="16" viewBox="0 0 24 24" class="text-slate-300">
+                  <path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span id="wld-toggle-label-${id}">Collapse</span>
+              </span>
+            </button>
+            <button class="btn2 !border-red-500/40 !bg-red-500/10 !text-red-200" onclick="removeWLD(${id})">Remove WLD</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="wld-body-${id}" class="mt-4 space-y-4">
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="p-4 rounded-2xl border border-slate-700 bg-slate-950/35">
+            <div class="lbl text-sky-300">Tenant Demand</div>
+            <div class="mt-3 space-y-3">
+              <div><div class="lbl !mb-1">VMs</div><input type="number" id="w-vms-${id}" value="100" class="inp" oninput="recalculate()"></div>
+              <div><div class="lbl !mb-1">vCPU / VM</div><input type="number" id="w-vcpu-vm-${id}" value="4" class="inp" oninput="recalculate()"></div>
+              <div><div class="lbl !mb-1">RAM / VM (GB)</div><input type="number" id="w-ram-vm-${id}" value="16" class="inp" oninput="recalculate()"></div>
+              <div>
+                <div class="lbl !mb-1">Disk / VM (GB)</div>
+                <input type="number" id="w-disk-vm-${id}" value="250" class="inp" oninput="recalculate()">
+                <div class="tiny mt-1">(VMs × Disk/VM) + (Infra VM disks)</div>
+              </div>
+              <div>
+                <div class="lbl !mb-1">Growth %</div>
+                <input type="number" id="w-growth-${id}" value="10" min="0" max="200" step="1" class="inp" oninput="recalculate()">
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl border border-slate-700 bg-slate-950/35">
+            <div class="flex items-center justify-between">
+              <div class="lbl">Policy + Planning (Per WLD)</div>
+              <div class="text-[11px] text-slate-400 mono">vmtechie.blog</div>
+            </div>
+
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <div><div class="lbl text-sky-300 !mb-1">CPU SUB</div>
+                <select id="w-cpu-sub-${id}" class="sel" onchange="recalculate()">
+                  <option value="1">1:1</option><option value="2" selected>2:1</option><option value="4">4:1</option><option value="8">8:1</option>
+                </select>
+              </div>
+              <div><div class="lbl text-sky-300 !mb-1">MEM SUB</div>
+                <select id="w-ram-sub-${id}" class="sel" onchange="recalculate()">
+                  <option value="1" selected>1:1</option><option value="2">2:1</option><option value="4">4:1</option><option value="8">8:1</option>
+                </select>
+              </div>
+
+              <div><div class="lbl text-emerald-300 !mb-1">FTT</div>
+                <select id="w-ftt-${id}" class="sel" onchange="recalculate()">
+                  <option value="1" selected>FTT=1</option><option value="2">FTT=2</option>
+                </select>
+              </div>
+              <div><div class="lbl text-emerald-300 !mb-1">RAID</div>
+                <select id="w-raid-${id}" class="sel" onchange="recalculate()">
+                  <option value="mirror">RAID-1</option><option value="raid5" selected>RAID-5</option><option value="raid6">RAID-6</option>
+                </select>
+              </div>
+
+              <div><div class="lbl !mb-1">Host Reserve %</div>
+                <select id="w-reserve-${id}" class="sel" onchange="recalculate()">
+                  <option value="15">15%</option><option value="20">20%</option><option value="25">25%</option><option value="30" selected>30%</option>
+                </select>
+                <div class="tiny mt-1">Compute + memory only.</div>
+              </div>
+              <div><div class="lbl !mb-1">vSAN Free Space %</div>
+                <input type="number" id="w-free-${id}" value="30" min="0" max="50" class="inp" oninput="recalculate()">
+              </div>
+
+              <div><div class="lbl !mb-1">Dedup</div><input type="number" id="w-dedupe-${id}" value="1.2" step="0.1" min="1" class="inp" oninput="recalculate()"></div>
+              <div><div class="lbl !mb-1">Compression</div><input type="number" id="w-comp-${id}" value="1.2" step="0.1" min="1" class="inp" oninput="recalculate()"></div>
+
+              <div class="col-span-2">
+                <div class="lbl !mb-1">Apply DRR</div>
+                <label class="flex items-center gap-3 p-2 rounded-2xl border border-slate-700 bg-slate-950/25">
+                  <input type="checkbox" id="w-applyDRR-${id}" class="accent-emerald-500 scale-110" checked onchange="recalculate()">
+                  <span class="text-[12px] text-slate-200 font-black">ON</span>
+                  <span class="tiny">DRR reduces capacity requirement (planner).</span>
+                </label>
+              </div>
+
+              <div><div class="lbl !mb-1">VM Swap used %</div>
+                <input type="number" id="w-swapPct-${id}" value="100" step="5" min="0" max="200" class="inp" oninput="recalculate()">
+              </div>
+
+              <div><div class="lbl !mb-1">Failure Domain</div>
+                <select id="w-fail-${id}" class="sel" onchange="recalculate()">
+                  <option value="0">0</option><option value="1" selected>N+1</option><option value="2">N+2</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mt-3 text-[11px] text-slate-400">
+              <span class="font-black text-slate-200">Protection Factor</span>
+              <span class="text-slate-500">(capacity overhead multiplier for chosen FTT policy)</span>
+              <span id="w-pf-tip-${id}" class="tip" title="--">i</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Infra VMs -->
+        <div class="p-4 rounded-2xl border border-slate-700 bg-slate-950/35">
+          <div class="lbl">Infrastructure VMs</div>
+          <div class="overflow-x-auto mt-3">
+            <table>
+              <thead>
+                <tr>
+                  <th class="w-14 text-center">Inc</th>
+                  <th class="w-[380px] text-left">Component</th>
+                  <th class="w-28 text-center">Nodes</th>
+                  <th class="w-24 text-center">Size</th>
+                  <th class="w-20 text-center">vCPU</th>
+                  <th class="w-24 text-center">RAM</th>
+                  <th class="w-28 text-center">Disk (GB)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-center"><input type="checkbox" id="w-sup-inc-${id}" class="accent-sky-500 scale-110" checked onchange="recalculate()"></td>
+                  <td class="text-slate-100 font-black">Supervisor Control Plane <span class="text-slate-400 font-black">(VKS)</span></td>
+                  <td class="text-center">
+                    <select id="w-sup-nodes-${id}" class="sel !w-24 !mx-auto" onchange="recalculate()">
+                      <option value="1">Single (1)</option><option value="3" selected>HA (3)</option>
+                    </select>
+                  </td>
+                  <td class="text-center">
+                    <select id="w-sup-size-${id}" class="sel !w-28 !mx-auto" onchange="recalculate()">
+                      <option value="tiny">Tiny</option>
+                      <option value="small" selected>Small</option>
+                      <option value="medium">Medium</option>
+                      <option value="large">Large</option>
+                    </select>
+                  </td>
+                  <td class="text-center mono font-black text-slate-100" id="w-sup-v-${id}">--</td>
+                  <td class="text-center mono font-black text-slate-100" id="w-sup-r-${id}">--</td>
+                  <td class="text-center mono font-black text-sky-200" id="w-sup-d-${id}">--</td>
+                </tr>
+
+                <tr>
+                  <td class="text-center"><input type="checkbox" id="w-edge-inc-${id}" class="accent-sky-500 scale-110" onchange="recalculate()"></td>
+                  <td class="text-slate-100 font-black">NSX Edge Nodes</td>
+                  <td class="text-center">
+                    <select id="w-edge-nodes-${id}" class="sel !w-24 !mx-auto" onchange="recalculate()">
+                      <option value="2" selected>2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option>
+                    </select>
+                  </td>
+                  <td class="text-center">
+                    <select id="w-edge-size-${id}" class="sel !w-20 !mx-auto" onchange="recalculate()">
+                      <option value="s" selected>S</option>
+                      <option value="m">M</option>
+                      <option value="l">L</option>
+                      <option value="xl">XL</option>
+                    </select>
+                  </td>
+                  <td class="text-center mono font-black text-slate-100" id="w-edge-v-${id}">--</td>
+                  <td class="text-center mono font-black text-slate-100" id="w-edge-r-${id}">--</td>
+                  <td class="text-center mono font-black text-sky-200" id="w-edge-d-${id}">--</td>
+                </tr>
+
+                <tr>
+                  <td class="text-center"><input type="checkbox" id="w-c1-inc-${id}" class="accent-sky-500 scale-110" onchange="recalculate()"></td>
+                  <td class="text-slate-100 font-black">Custom 1</td>
+                  <td class="text-center"><input type="number" id="w-c1-nodes-${id}" value="1" min="0" step="1" class="inp !w-20 !mx-auto !text-center" oninput="recalculate()"></td>
+                  <td class="text-center">
+                    <select id="w-c1-size-${id}" class="sel !w-20 !mx-auto" onchange="recalculate()">
+                      <option value="s" selected>S</option><option value="m">M</option><option value="l">L</option>
+                    </select>
+                  </td>
+                  <td class="text-center mono font-black text-slate-100" id="w-c1-v-${id}">--</td>
+                  <td class="text-center mono font-black text-slate-100" id="w-c1-r-${id}">--</td>
+                  <td class="text-center mono font-black text-sky-200" id="w-c1-d-${id}">--</td>
+                </tr>
+
+                <tr>
+                  <td class="text-center"><input type="checkbox" id="w-c2-inc-${id}" class="accent-sky-500 scale-110" onchange="recalculate()"></td>
+                  <td class="text-slate-100 font-black">Custom 2</td>
+                  <td class="text-center"><input type="number" id="w-c2-nodes-${id}" value="1" min="0" step="1" class="inp !w-20 !mx-auto !text-center" oninput="recalculate()"></td>
+                  <td class="text-center">
+                    <select id="w-c2-size-${id}" class="sel !w-20 !mx-auto" onchange="recalculate()">
+                      <option value="s" selected>S</option><option value="m">M</option><option value="l">L</option>
+                    </select>
+                  </td>
+                  <td class="text-center mono font-black text-slate-100" id="w-c2-v-${id}">--</td>
+                  <td class="text-center mono font-black text-slate-100" id="w-c2-r-${id}">--</td>
+                  <td class="text-center mono font-black text-sky-200" id="w-c2-d-${id}">--</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- WLD Summary -->
+        <div class="p-4 rounded-2xl border border-slate-700 bg-slate-950/35">
+          <div class="flex items-center justify-between">
+            <div class="text-[14px] font-black uppercase tracking-widest italic text-sky-200">Workload Domain Summary</div>
+            <div class="text-[12px] text-slate-300 mono font-black">vmtechie.blog</div>
+          </div>
+
+          <div class="mt-3 overflow-x-auto">
+            <table class="analysisTable analysisTableBig">
+              <thead>
+                <tr>
+                  <th class="text-left w-1/4">Demand</th>
+                  <th class="text-left w-1/4">Host Result</th>
+                  <th class="text-left w-1/4">Licensing</th>
+                  <th class="text-left w-1/4">ESA Storage Model</th>
+                </tr>
+              </thead>
+
+              <tbody class="mono">
+                <tr>
+                  <td>
+                    <div class="flex justify-between"><span class="text-slate-300">vCPU</span><span id="w-dem-v-${id}" class="font-black text-white">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">RAM (GB)</span><span id="w-dem-r-${id}" class="font-black text-white">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">Disk (GB)</span><span id="w-dem-d-${id}" class="font-black text-sky-200">--</span></div>
+                  </td>
+
+                  <td>
+                    <div class="flex justify-between"><span class="text-slate-300">Final Hosts</span><span id="w-hosts-${id}" class="font-black text-sky-200">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">Limiter</span><span id="w-limiter-${id}" class="font-black lim-mem">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">CPU/Mem Hosts</span><span id="w-hosts-cm-${id}" class="font-black text-slate-100">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">Storage Hosts</span><span id="w-hosts-stg-${id}" class="font-black text-slate-100">--</span></div>
+                  </td>
+
+                  <td>
+                    <div class="flex justify-between"><span class="text-slate-300">Core Licenses</span><span id="w-cores-${id}" class="font-black text-sky-200">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">Raw Capacity (TiB)</span><span id="w-raw-${id}" class="font-black text-emerald-200">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">DRR</span><span id="w-drr-${id}" class="font-black text-slate-100">--</span></div>
+                  </td>
+
+                  <td>
+                    <div class="flex justify-between"><span class="text-slate-300">VM Capacity</span><span id="w-esa-vmcap-${id}" class="font-black text-sky-200">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">Swap</span><span id="w-esa-swap-${id}" class="font-black text-slate-100">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">Interim Total</span><span id="w-esa-interim-${id}" class="font-black text-slate-100">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">Protected <span class="text-slate-500">(× PF)</span></span><span id="w-esa-prot-${id}" class="font-black text-emerald-200">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">+ Free Space</span><span id="w-esa-free-${id}" class="font-black text-slate-100">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">+ Growth</span><span id="w-esa-growth_${id}" class="font-black text-slate-100">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">Effective Hosts</span><span id="w-eff-${id}" class="font-black text-slate-100">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">Per Host Required</span><span id="w-esa-perhost-${id}" class="font-black text-emerald-200">--</span></div>
+                    <div class="flex justify-between mt-3"><span class="text-slate-300">PF</span><span id="w-esa-pf-${id}" class="font-black text-slate-100">--</span></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tiny mt-3">
+            Protected = (VM Capacity + Swap) × Protection Factor. Utilization uses worst-case of CPU/Mem/Storage • vmtechie.blog
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    container.appendChild(div);
+    recalculate();
+  }
+
+  function removeWLD(id){
+    const cards = document.querySelectorAll('.wld-card');
+    if(cards.length <= 1) return;
+    const el = document.getElementById(`wld-${id}`);
+    if(el) el.remove();
+    recalculate();
+  }
+
+  // =========================
+  //  Health model for utilization
+  // =========================
+  function healthFromUtil(u){
+    if (u >= 0.90) return { label:"Tight", cls:"badge b-tight" };
+    if (u >= 0.65) return { label:"Healthy", cls:"badge b-healthy" };
+    return { label:"Oversized", cls:"badge b-oversized" };
+  }
+
+  function applyLimiterClass(el, lim){
+    if(!el) return;
+    el.classList.remove('lim-cpu','lim-mem','lim-stg');
+    if(lim === 'Compute') el.classList.add('lim-cpu');
+    else if(lim === 'Memory') el.classList.add('lim-mem');
+    else el.classList.add('lim-stg');
+  }
+
+  // =========================
+  //  Main calc
+  // =========================
+  function recalculate(){
+    // ---- Management host profile ----
+    const mCpuQty = Math.max(1, clampNum(document.getElementById('m-cpuQty').value, 2));
+    const mCoresPerCpu = Math.max(1, clampNum(document.getElementById('m-coresPerCpu').value, 16));
+    const mHostCores = mCpuQty * mCoresPerCpu;
+
+    const mHostRAM = Math.max(1, clampNum(document.getElementById('m-ram').value, 1024));
+    const mNvQty = Math.max(0, clampNum(document.getElementById('m-nvme-qty').value, 6));
+    const mNvTB = Math.max(0, clampNum(document.getElementById('m-nvme-size').value, 7.68));
+    const rawGBperHost = mNvQty * mNvTB * 1024;
+
+    const mCpuSub = Math.max(1, clampNum(document.getElementById('m-cpu-sub').value, 2));
+    const mMemSub = Math.max(1, clampNum(document.getElementById('m-ram-sub').value, 1));
+    const mReservePct = clampNum(document.getElementById('m-reserve').value, 30);
+    const mReserveFactor = (100 - mReservePct) / 100;
+
+    const mFTT = parseInt(document.getElementById('m-ftt').value, 10);
+    const mRaidSel = document.getElementById('m-raid').value;
+    const mMode = (mRaidSel === 'mirror') ? 'MIRROR' : (mRaidSel === 'raid6' ? 'RAID6' : 'RAID5');
+
+    let mPF = 1.5;
+    try { mPF = esaProtectionFactor({ mode: mMode, ftt: mFTT }); } catch(e){ mPF = 1.5; }
+
+    const mFreePct = clampNum(document.getElementById('m-free').value, 30) / 100;
+
+    const mApplyDRR = document.getElementById('m-applyDRR')?.checked ?? true;
+    const mDrrRaw = Math.max(1, clampNum(document.getElementById('m-dedupe').value, 1.2)) * Math.max(1, clampNum(document.getElementById('m-comp').value, 1.2));
+    const mDrr = mApplyDRR ? mDrrRaw : 1.0;
+
+    const mSwapPct = Math.max(0, clampNum(document.getElementById('m-swapPct').value, 100)) / 100;
+
+    const minMgmtHosts = Math.max(2, clampNum(document.getElementById('m-min-hosts').value, 4));
+
+    // Mgmt Failure Domain selector (0 / N+1 / N+2)
+    const failures = Math.max(0, clampNum(document.getElementById('m-fail').value, 1));
+
+    // ---- Management totals ----
+    const mg = mgmtTotals();
+
+    // Compute/Mem capacities
+    const usableVcpuPerHost = Math.max(1, ((mHostCores * 2) - 12) * mCpuSub * mReserveFactor);
+    const usableRamPerHost  = Math.max(1, mHostRAM * mMemSub * mReserveFactor);
+
+    const cpuHosts = Math.ceil(Math.max(1, mg.vcpu / usableVcpuPerHost));
+    const ramHosts = Math.ceil(Math.max(1, mg.ramGB / usableRamPerHost));
+    const hostsCM = Math.max(cpuHosts, ramHosts, minMgmtHosts);
+
+    // ESA totals (Mgmt growth = 0)
+    const vmCapGB = (mg.diskGB / mDrr);
+    const swapGB  = (mg.ramGB * mSwapPct);
+    const totals  = esaStorageTotals({
+      vmCapacityGB: vmCapGB,
+      swapGB,
+      protectionFactor: mPF,
+      freeSpacePct: mFreePct,
+      growthPct: 0
+    });
+
+    // Storage-derived hosts (include host failures)
+    const stgHosts = Math.max(minMgmtHosts, Math.ceil((totals.withGrowthGB / rawGBperHost) + failures));
+
+    // FINAL mgmt hosts
+    const mHosts = Math.max(hostsCM, stgHosts);
+
+    // Mgmt visualizer
+    const mv = document.getElementById('m-visualizer');
+    mv.innerHTML = '';
+    for(let i=1;i<=mHosts;i++) mv.innerHTML += hostTile(`M${i}`, 'mgmt');
+
+    // Determine limiter
+    let limiter = "Compute";
+    if (ramHosts > cpuHosts) limiter = "Memory";
+    if (stgHosts >= hostsCM) limiter = "Storage";
+
+    const mLimiterEl = document.getElementById('m-limiter');
+    mLimiterEl.innerText = limiter;
+    applyLimiterClass(mLimiterEl, limiter);
+
+    // Mgmt output summary
+    const mgmtCores = mHosts * mHostCores;
+    const mgmtRawTiB = (mHosts * mNvQty * mNvTB) * TB_TO_TIB;
+
+    document.getElementById('m-dem-v').innerText = mg.vcpu;
+    document.getElementById('m-dem-r').innerText = mg.ramGB;
+    document.getElementById('m-cap-v').innerText = Math.round(usableVcpuPerHost);
+    document.getElementById('m-cap-r').innerText = Math.round(usableRamPerHost);
+    document.getElementById('m-hosts-cpu').innerText = cpuHosts;
+    document.getElementById('m-hosts-ram').innerText = ramHosts;
+
+    document.getElementById('m-hosts').innerText = mHosts;
+    document.getElementById('m-coresOut').innerText = mgmtCores;
+    document.getElementById('m-rawOut').innerText = mgmtRawTiB.toFixed(1);
+
+    // ESA per host based on final host count + failures
+    const per = esaPerHostFromTotals({ withGrowthGB: totals.withGrowthGB, clusterHostsN: mHosts, hostFailures: failures });
+
+    document.getElementById('m-esa-vmcap').innerText = vmCapGB.toFixed(0);
+    document.getElementById('m-esa-swap').innerText = swapGB.toFixed(0);
+    document.getElementById('m-esa-interim').innerText = totals.interimGB.toFixed(0);
+    document.getElementById('m-esa-prot').innerText = totals.protectedGB.toFixed(0);
+    document.getElementById('m-esa-free').innerText = (totals.withFreeGB - totals.protectedGB).toFixed(0);
+    document.getElementById('m-esa-growth').innerText = (totals.withGrowthGB - totals.withFreeGB).toFixed(0);
+    document.getElementById('m-esa-effhosts').innerText = per.effectiveHosts;
+    document.getElementById('m-esa-perhost').innerText = per.perHostGB.toFixed(0);
+    document.getElementById('m-esa-pf').innerText = mPF.toFixed(2);
+    document.getElementById('m-hosts-stg').innerText = stgHosts;
+
+    // ---- Fleet totals seed ----
+    let fleetHosts = mHosts;
+    let fleetCores = mgmtCores;
+    let fleetRawTiB = mgmtRawTiB;
+    let wldCoresTotal = 0;
+
+    // ---- WLD calc ----
+    document.querySelectorAll('.wld-card').forEach(card => {
+      const id = card.id.split('-')[1];
+
+      // Demand
+      const vms = Math.max(0, clampNum(document.getElementById(`w-vms-${id}`).value, 100));
+      const vPer = Math.max(1, clampNum(document.getElementById(`w-vcpu-vm-${id}`).value, 4));
+      const rPer = Math.max(1, clampNum(document.getElementById(`w-ram-vm-${id}`).value, 16));
+      const dPer = Math.max(1, clampNum(document.getElementById(`w-disk-vm-${id}`).value, 250));
+      const growthPct = Math.max(0, clampNum(document.getElementById(`w-growth-${id}`).value, 10)) / 100;
+
+      // Policy
+      const cSub = Math.max(1, clampNum(document.getElementById(`w-cpu-sub-${id}`).value, 2));
+      const mSub = Math.max(1, clampNum(document.getElementById(`w-ram-sub-${id}`).value, 1));
+      const reservePct = clampNum(document.getElementById(`w-reserve-${id}`).value, 30);
+      const reserveFactor = (100 - reservePct) / 100;
+
+      const ftt = parseInt(document.getElementById(`w-ftt-${id}`).value, 10);
+      const raidSel = document.getElementById(`w-raid-${id}`).value;
+      const mode = (raidSel === 'mirror') ? 'MIRROR' : (raidSel === 'raid6' ? 'RAID6' : 'RAID5');
+
+      let pf = 1.5;
+      try { pf = esaProtectionFactor({ mode, ftt }); } catch(e){ pf = 1.5; }
+
+      const freePct = clampNum(document.getElementById(`w-free-${id}`).value, 30) / 100;
+
+      const applyDRR = document.getElementById(`w-applyDRR-${id}`)?.checked ?? true;
+      const drrRaw = Math.max(1, clampNum(document.getElementById(`w-dedupe-${id}`).value, 1.2)) * Math.max(1, clampNum(document.getElementById(`w-comp-${id}`).value, 1.2));
+      const drr = applyDRR ? drrRaw : 1.0;
+
+      const swapPct = Math.max(0, clampNum(document.getElementById(`w-swapPct-${id}`).value, 100)) / 100;
+      const failuresW = Math.max(0, clampNum(document.getElementById(`w-fail-${id}`).value, 1));
+
+      // PF Tooltip
+      const tip = document.getElementById(`w-pf-tip-${id}`);
+      if (tip) {
+        const raidTxt = (mode === 'MIRROR') ? 'RAID-1 (Mirror)' : (mode === 'RAID6' ? 'RAID-6' : 'RAID-5');
+        const pfExplain =
+          mode === 'MIRROR' ? `PF = 1 + FTT = 1 + ${ftt} = ${(1+ftt).toFixed(2)}`
+          : (mode === 'RAID5' && ftt === 1) ? `PF = 1.50 (2+1)`
+          : (mode === 'RAID5' && ftt === 2) ? `PF = 1.75 (4+2)`
+          : (mode === 'RAID6' && ftt === 2) ? `PF = 1.50 (2+2)`
+          : `PF = ${pf.toFixed(2)}`;
+        tip.title = `Protection Factor\nPolicy: ${raidTxt}, FTT=${ftt}\n${pfExplain}\n\nProtected = (VM Capacity + Swap) × PF`;
+      }
+
+      // Infra specs
+      const supSize = document.getElementById(`w-sup-size-${id}`).value; // tiny/small/medium/large
+      const supSpec = wldVmMap.vks[supSize];
+
+      const edgeSize = document.getElementById(`w-edge-size-${id}`).value; // s/m/l/xl
+      const edgeSpec = wldVmMap.edgeFromMgmt[edgeSize]; // exactly mgmt nsx_e sizing
+
+      const c1Size = document.getElementById(`w-c1-size-${id}`).value;
+      const c1Spec = wldVmMap.custom[c1Size];
+      const c2Size = document.getElementById(`w-c2-size-${id}`).value;
+      const c2Spec = wldVmMap.custom[c2Size];
+
+      // Update display cells
+      document.getElementById(`w-sup-v-${id}`).innerText = supSpec[0];
+      document.getElementById(`w-sup-r-${id}`).innerText = supSpec[1];
+      document.getElementById(`w-sup-d-${id}`).innerText = supSpec[2];
+
+      document.getElementById(`w-edge-v-${id}`).innerText = edgeSpec[0];
+      document.getElementById(`w-edge-r-${id}`).innerText = edgeSpec[1];
+      document.getElementById(`w-edge-d-${id}`).innerText = edgeSpec[2];
+
+      document.getElementById(`w-c1-v-${id}`).innerText = c1Spec[0];
+      document.getElementById(`w-c1-r-${id}`).innerText = c1Spec[1];
+      document.getElementById(`w-c1-d-${id}`).innerText = c1Spec[2];
+
+      document.getElementById(`w-c2-v-${id}`).innerText = c2Spec[0];
+      document.getElementById(`w-c2-r-${id}`).innerText = c2Spec[1];
+      document.getElementById(`w-c2-d-${id}`).innerText = c2Spec[2];
+
+      // include flags
+      const supInc = document.getElementById(`w-sup-inc-${id}`).checked;
+      const supNodes = Math.max(0, clampNum(document.getElementById(`w-sup-nodes-${id}`).value, 3));
+      const edgeInc = document.getElementById(`w-edge-inc-${id}`).checked;
+      const edgeNodes = Math.max(0, clampNum(document.getElementById(`w-edge-nodes-${id}`).value, 2));
+      const c1Inc = document.getElementById(`w-c1-inc-${id}`).checked;
+      const c1Nodes = Math.max(0, clampNum(document.getElementById(`w-c1-nodes-${id}`).value, 1));
+      const c2Inc = document.getElementById(`w-c2-inc-${id}`).checked;
+      const c2Nodes = Math.max(0, clampNum(document.getElementById(`w-c2-nodes-${id}`).value, 1));
+
+      const infraV = (supInc ? supSpec[0]*supNodes : 0) + (edgeInc ? edgeSpec[0]*edgeNodes : 0) + (c1Inc ? c1Spec[0]*c1Nodes : 0) + (c2Inc ? c2Spec[0]*c2Nodes : 0);
+      const infraR = (supInc ? supSpec[1]*supNodes : 0) + (edgeInc ? edgeSpec[1]*edgeNodes : 0) + (c1Inc ? c1Spec[1]*c1Nodes : 0) + (c2Inc ? c2Spec[1]*c2Nodes : 0);
+      const infraD = (supInc ? supSpec[2]*supNodes : 0) + (edgeInc ? edgeSpec[2]*edgeNodes : 0) + (c1Inc ? c1Spec[2]*c1Nodes : 0) + (c2Inc ? c2Spec[2]*c2Nodes : 0);
+
+      const demandV = (vms*vPer) + infraV;
+      const demandR = (vms*rPer) + infraR;
+      const demandD = (vms*dPer) + infraD;
+
+      // Host caps (inherit mgmt host profile)
+      const hostCores = mHostCores;
+      const hostRAM = mHostRAM;
+      const usableVcpu = Math.max(1, ((hostCores*2) - 12) * cSub * reserveFactor);
+      const usableRam  = Math.max(1, hostRAM * mSub * reserveFactor);
+
+      const cpuHosts2 = Math.ceil(Math.max(1, demandV / usableVcpu));
+      const ramHosts2 = Math.ceil(Math.max(1, demandR / usableRam));
+      const hostsCM2 = Math.max(cpuHosts2, ramHosts2, 2);
+
+      // ESA totals (cluster total)
+      const vmCapGB2 = (demandD / drr);
+      const swapGB2  = (demandR * swapPct);
+      const totals2 = esaStorageTotals({
+        vmCapacityGB: vmCapGB2,
+        swapGB: swapGB2,
+        protectionFactor: pf,
+        freeSpacePct: freePct,
+        growthPct: growthPct
+      });
+
+      // Storage-derived hosts
+      const rawGBperHost2 = mNvQty * mNvTB * 1024;
+      const stgHosts2 = Math.max(2, Math.ceil((totals2.withGrowthGB / rawGBperHost2) + failuresW));
+
+      // Final hosts
+      const hosts = Math.max(hostsCM2, stgHosts2);
+
+      // Limiter
+      let lim = "Compute";
+      if (ramHosts2 > cpuHosts2) lim = "Memory";
+      if (stgHosts2 >= hostsCM2) lim = "Storage";
+
+      // Utilization (worst-case)
+      const cpuUtil = demandV / (hosts * usableVcpu);
+      const memUtil = demandR / (hosts * usableRam);
+      const stgUtil = totals2.withGrowthGB / (hosts * rawGBperHost2);
+      const util = Math.max(cpuUtil, memUtil, stgUtil);
+      const utilPct = Math.max(0, Math.min(1, util)) * 100;
+
+      // Health badge + bar styling
+      const health = healthFromUtil(util);
+      const healthEl = document.getElementById(`w-health-${id}`);
+      if (healthEl) { healthEl.className = health.cls; healthEl.innerText = health.label; }
+
+      const bar = document.getElementById(`w-util-bar-${id}`);
+      if (bar) {
+        bar.style.width = Math.min(100, utilPct).toFixed(0) + "%";
+        bar.classList.remove('tight','hot');
+        if (util >= 0.90) bar.classList.add('hot');
+        else if (util >= 0.80) bar.classList.add('tight');
+      }
+      const utilTxt = document.getElementById(`w-util-pct-${id}`);
+      if (utilTxt) utilTxt.innerText = utilPct.toFixed(0) + "%";
+
+      // Host visualizer tiles
+      const viz = document.getElementById(`wld-viz-${id}`);
+      if (viz) {
+        viz.innerHTML = '';
+        for (let i=1; i<=hosts; i++) viz.innerHTML += hostTile(`H${i}`, 'wld');
+      }
+
+      // ESA per-host with final host count
+      const per2 = esaPerHostFromTotals({ withGrowthGB: totals2.withGrowthGB, clusterHostsN: hosts, hostFailures: failuresW });
+
+      // Outputs (Demand + Hosts)
+      document.getElementById(`w-dem-v-${id}`).innerText = demandV;
+      document.getElementById(`w-dem-r-${id}`).innerText = demandR;
+      document.getElementById(`w-dem-d-${id}`).innerText = demandD;
+
+      document.getElementById(`w-hosts-${id}`).innerText = hosts;
+      document.getElementById(`w-hosts-cm-${id}`).innerText = hostsCM2;
+      document.getElementById(`w-hosts-stg-${id}`).innerText = stgHosts2;
+
+      const limEl = document.getElementById(`w-limiter-${id}`);
+      if (limEl) { limEl.innerText = lim; applyLimiterClass(limEl, lim); }
+
+      // Licensing
+      const wCores = hosts * hostCores;
+      const wRawTiB = (hosts * mNvQty * mNvTB) * TB_TO_TIB;
+
+      document.getElementById(`w-cores-${id}`).innerText = wCores;
+      document.getElementById(`w-raw-${id}`).innerText = wRawTiB.toFixed(1);
+      document.getElementById(`w-drr-${id}`).innerText = drr.toFixed(2);
+
+      // ESA (WLD summary now mirrors mgmt-style)
+      document.getElementById(`w-esa-vmcap-${id}`).innerText = vmCapGB2.toFixed(0);
+      document.getElementById(`w-esa-swap-${id}`).innerText = swapGB2.toFixed(0);
+      const interimEl = document.getElementById(`w-esa-interim-${id}`);
+      if (interimEl) interimEl.innerText = totals2.interimGB.toFixed(0);
+
+      document.getElementById(`w-esa-prot-${id}`).innerText = totals2.protectedGB.toFixed(0);
+
+      const freeEl = document.getElementById(`w-esa-free-${id}`);
+      if (freeEl) freeEl.innerText = (totals2.withFreeGB - totals2.protectedGB).toFixed(0);
+
+      const growthEl = document.getElementById(`w-esa-growth_${id}`);
+      if (growthEl) growthEl.innerText = (totals2.withGrowthGB - totals2.withFreeGB).toFixed(0);
+
+      document.getElementById(`w-eff-${id}`).innerText = per2.effectiveHosts;
+      document.getElementById(`w-esa-perhost-${id}`).innerText = per2.perHostGB.toFixed(0);
+
+      const pfEl = document.getElementById(`w-esa-pf-${id}`);
+      if (pfEl) pfEl.innerText = pf.toFixed(2);
+
+      // Fleet totals
+      fleetHosts += hosts;
+      fleetCores += wCores;
+      fleetRawTiB += wRawTiB;
+      wldCoresTotal += wCores;
+    });
+
+    // Fleet header
+    document.getElementById('sum-hosts').innerText = fleetHosts;
+    document.getElementById('sum-cores').innerText = fleetCores;
+    document.getElementById('sum-storage').innerText = fleetRawTiB.toFixed(1) + " TiB";
+
+    // License summary
+    document.getElementById('lic-mgmt').innerText = mgmtCores;
+    document.getElementById('lic-wld').innerText = wldCoresTotal;
+
+    const entitlementTiB = fleetCores * 1.0;
+    const addonTiB = Math.max(0, fleetRawTiB - entitlementTiB);
+
+    document.getElementById('lic-ent').innerText = entitlementTiB.toFixed(0);
+    document.getElementById('lic-raw').innerText = fleetRawTiB.toFixed(1) + " TiB";
+
+    const addonEl = document.getElementById('lic-addon');
+    if (addonTiB > 0) {
+      addonEl.className = "bigNum2 text-red-300";
+      addonEl.innerText = addonTiB.toFixed(1);
+    } else {
+      addonEl.className = "bigNum2 text-emerald-200";
+      addonEl.innerText = "0.0";
+    }
+  }
+
+  function init(){
+    renderInventory();
+    addWLD();
+  }
+
+  window.onload = init;
+</script>
+</body>
+</html>
